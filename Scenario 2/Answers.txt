@@ -1,0 +1,71 @@
+1) What are different artifacts you need to create - name of the artifacts and its purpose
+Ans: For VM deployment through ARM I will need just one artifact i.e the zip file containing the 'resource.json' & 'resource.parameters.json'
+
+2) List the tools you will to create and store the ARM templates.
+Ans: I will use the Azure Resource Group projects in visual studio to create and store the tempaltes.
+
+3) Explain the process and steps to create automated deployment pipeline.
+Ans: Please find the sample yml pipeline below:
+
+     I have written the yml pipeline for template deployment
+
+
+pool:
+  name: Hosted Windows 2019 with VS2019    # Pool where we are oing to run our work loads
+
+steps:
+- task: AzureFileCopy@3
+  displayName: 'Stage files'               # staging the artifacts 
+  inputs:
+    SourcePath: 'Templates'
+    azureSubscription: ''
+    Destination: 'AzureBlob'
+    storage: ''
+    ContainerName: ''
+    outputStorageUri: ''
+    outputStorageContainerSasToken: ''
+    sasTokenTimeOutInMinutes: '240'
+	
+- task: AzureResourceGroupDeployment@2
+  displayName: 'Deploy template'
+  inputs:
+    deploymentScope: 'Resource Group'      # Template deployment. 
+    ConnectedServiceName: ''
+    subscriptionName: ''
+    action: 'Create Or Update Resource Group'
+    resourceGroupName: ''
+    location: ''
+    templateLocation: 'URL of the file OR Linked artifacts'
+    csmFileLink: ''
+    csmParametersFileLink: ''
+    deploymentMode: 'Incremental'
+	
+
+5) Explain how will you access the password stored in Key Vault and use it as Admin Password in the VM ARM template.
+
+Ans:  
+
+Assumptions: The user context used for template deployment is the same user used to create a Key vault. So the user has the access rights to create and update key vault secrets.
+
+Step 1:  Enable Key vault for Template Deployment.
+        GOTO>Key vault>Access Policies>under Enable Access To: "Azure Resource Manager for template deployment"
+
+Step 2
+       In resource.json file declare the admin password as:
+	   "parameters": {
+
+    "adminPassword": {
+      "type": "securestring"
+                     }
+
+                     }
+					 
+	  In resource.parameters.json
+	  
+	  "adminPassword": {
+        "reference": {
+          "keyVault": {
+          "id": "/subscriptions/your subscription/resourceGroups/resource group/providers/Microsoft.KeyVault/vaults/key vault name"
+          },
+          "secretName": "secret name in vault"
+        }

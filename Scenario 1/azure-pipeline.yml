@@ -1,0 +1,41 @@
+trigger:                     #1. Trigger is set to master branch, any checkin made to master branch will tigger the build.
+- master
+
+paths:
+  include:                   #2. This will include all the given projects
+  -Web
+  -API
+  -test
+
+pool:
+  name: Hosted Windows 2019 with VS2019
+
+
+steps:
+
+- task: PublishTestResults@2
+  displayName: 'Test'
+  inputs:
+    failTaskOnFailedTests: true  #2.1. If the test case fails, the build will fail.
+    
+
+- task: AzureWebApp@1
+  inputs:                                            #3) The deployment of code and artifacts should be automated to Dev environment. 
+    azureSubscription: 'your dev subscription ID'
+    appName: 'web app name'
+    package: 'zip package the content of your website'
+    resourceGroupName: 'web app rg'
+    location: 'West Europe'
+    ConnectedServiceName: 'service connection'
+
+- task: AzureFileCopy@3
+  displayName: 'Dev files'                          #4. Staging the artifacts to storage account so that they can be used for deployments on QA and Prod
+  inputs:
+    SourcePath: 'code repo'
+    azureSubscription: 'service connection'
+    Destination: 'AzureBlob'
+    storage: 'storage account name'
+    ContainerName: 'container name'
+    outputStorageUri: 'https://storageaccountnaem.blob.core.windows.net/container/temp/'
+    outputStorageContainerSasToken: 'sas token for storage'
+    sasTokenTimeOutInMinutes: '240'
